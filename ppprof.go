@@ -79,10 +79,14 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 	})
 
+	if !hasMain {
+		return nil, nil
+	}
+
 	isPprofImported := slices.ContainsFunc(pass.Pkg.Imports(), func(pkg *types.Package) bool {
 		return pkg.Path() == "net/http/pprof"
 	})
-	if hasMain && !isPprofImported {
+	if !isPprofImported {
 		pass.Report(analysis.Diagnostic{
 			Pos:     pass.Files[0].Package,
 			Message: "should import net/http/pprof",
