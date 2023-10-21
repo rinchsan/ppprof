@@ -51,7 +51,29 @@ func run(pass *analysis.Pass) (any, error) {
 			hasMain = true
 
 			if !isPprofSetUp(pass, n.Body.List) {
-				pass.Reportf(n.Pos(), "should set up pprof at the beginning of main")
+				pass.Report(analysis.Diagnostic{
+					Pos:     n.Pos(),
+					Message: "should set up pprof at the beginning of main",
+					SuggestedFixes: []analysis.SuggestedFix{
+						{
+							Message: "set up pprof",
+							TextEdits: []analysis.TextEdit{
+								{
+									Pos: n.Body.Lbrace + 1,
+									End: n.Body.Lbrace + 1,
+									NewText: []byte(`
+    runtime.SetBlockProfileRate(1)
+	runtime.SetMutexProfileFraction(1)
+	go func() {
+		log.Fatal(http.ListenAndServe("localhost:6060", nil))
+	}()
+
+`),
+								},
+							},
+						},
+					},
+				})
 				return
 			}
 		}
