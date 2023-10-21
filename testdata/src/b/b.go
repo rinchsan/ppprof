@@ -1,7 +1,10 @@
 package b
 
+import "fmt"
+
 func main() int {
-	_ = "ppprof"
+	fmt.Println("ppprof")
+	return 1
 }
 
 type A struct{}

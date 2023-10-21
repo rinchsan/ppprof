@@ -12,4 +12,6 @@ import (
 func TestAnalyzer(t *testing.T) {
 	testdata := testutil.WithModules(t, analysistest.TestData(), nil)
 	analysistest.Run(t, testdata, ppprof.Analyzer, "a")
+	analysistest.Run(t, testdata, ppprof.Analyzer, "b")
+	analysistest.Run(t, testdata, ppprof.Analyzer, "c")
 }
