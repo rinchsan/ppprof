@@ -62,7 +62,7 @@ func run(pass *analysis.Pass) (any, error) {
 									Pos: n.Body.Lbrace + 1,
 									End: n.Body.Lbrace + 1,
 									NewText: []byte(`
-    runtime.SetBlockProfileRate(1)
+	runtime.SetBlockProfileRate(1)
 	runtime.SetMutexProfileFraction(1)
 	go func() {
 		log.Fatal(http.ListenAndServe("localhost:6060", nil))
