@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/gostaticanalysis/testutil v0.4.0
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	golang.org/x/tools v0.14.0
 )
 
