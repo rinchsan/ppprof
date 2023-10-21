@@ -1,4 +1,4 @@
-package a
+package a // want "should import net/http/pprof"
 
 import "fmt"
 

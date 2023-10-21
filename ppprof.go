@@ -1,6 +1,7 @@
 package ppprof
 
 import (
+	"errors"
 	"go/ast"
 	"go/types"
 	"strconv"
@@ -24,7 +25,18 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (any, error) {
+	if len(pass.Files) != 1 {
+		return nil, errors.New("cannot run with multiple files")
+	}
+
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+
+	isPprofImported := slices.ContainsFunc(pass.Pkg.Imports(), func(pkg *types.Package) bool {
+		return pkg.Path() == "net/http/pprof"
+	})
+	if !isPprofImported {
+		pass.Reportf(pass.Files[0].Package, "should import net/http/pprof")
+	}
 
 	nodeFilter := []ast.Node{
 		(*ast.FuncDecl)(nil),
@@ -134,14 +146,10 @@ func isPprofSetUp(pass *analysis.Pass, stmts []ast.Stmt) bool {
 		return false
 	}
 
-	isPprofImported := slices.ContainsFunc(pass.Pkg.Imports(), func(pkg *types.Package) bool {
-		return pkg.Path() == "net/http/pprof"
-	})
-
 	isRuntimeSet := (isRuntimeSetBlockProfileRate(pass, stmts[0]) && isRuntimeSetMutexProfileFraction(pass, stmts[1])) ||
 		(isRuntimeSetBlockProfileRate(pass, stmts[1])) && isRuntimeSetMutexProfileFraction(pass, stmts[0])
 
 	isProfileServed := isProfileServedInGoStmt(pass, stmts[2])
 
-	return isPprofImported && isRuntimeSet && isProfileServed
+	return isRuntimeSet && isProfileServed
 }
