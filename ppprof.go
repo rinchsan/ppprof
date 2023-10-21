@@ -31,16 +31,11 @@ func run(pass *analysis.Pass) (any, error) {
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 
-	isPprofImported := slices.ContainsFunc(pass.Pkg.Imports(), func(pkg *types.Package) bool {
-		return pkg.Path() == "net/http/pprof"
-	})
-	if !isPprofImported {
-		pass.Reportf(pass.Files[0].Package, "should import net/http/pprof")
-	}
-
 	nodeFilter := []ast.Node{
 		(*ast.FuncDecl)(nil),
 	}
+
+	var hasMain bool
 
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch n := n.(type) {
@@ -53,12 +48,36 @@ func run(pass *analysis.Pass) (any, error) {
 				return
 			}
 
+			hasMain = true
+
 			if !isPprofSetUp(pass, n.Body.List) {
 				pass.Reportf(n.Pos(), "should set up pprof at the beginning of main")
 				return
 			}
 		}
 	})
+
+	isPprofImported := slices.ContainsFunc(pass.Pkg.Imports(), func(pkg *types.Package) bool {
+		return pkg.Path() == "net/http/pprof"
+	})
+	if hasMain && !isPprofImported {
+		pass.Report(analysis.Diagnostic{
+			Pos:     pass.Files[0].Package,
+			Message: "should import net/http/pprof",
+			SuggestedFixes: []analysis.SuggestedFix{
+				{
+					Message: "import net/http/pprof",
+					TextEdits: []analysis.TextEdit{
+						{
+							Pos:     pass.Files[0].Name.Pos() + 1,
+							End:     pass.Files[0].Name.Pos() + 1,
+							NewText: []byte("\n" + `import _ "net/http/pprof"`),
+						},
+					},
+				},
+			},
+		})
+	}
 
 	return nil, nil
 }
