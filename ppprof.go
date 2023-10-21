@@ -106,7 +106,7 @@ func run(pass *analysis.Pass) (any, error) {
 
 func callWithFunObjFromStmt(pass *analysis.Pass, stmt ast.Stmt) (*ast.CallExpr, types.Object) {
 	expr, _ := stmt.(*ast.ExprStmt)
-	if stmt == nil {
+	if expr == nil {
 		return nil, nil
 	}
 	call, _ := expr.X.(*ast.CallExpr)
@@ -122,11 +122,19 @@ func callWithFunObjFromStmt(pass *analysis.Pass, stmt ast.Stmt) (*ast.CallExpr, 
 
 func isRuntimeSetBlockProfileRate(pass *analysis.Pass, stmt ast.Stmt) bool {
 	_, obj := callWithFunObjFromStmt(pass, stmt)
+	if obj == nil {
+		return false
+	}
+
 	return obj.Pkg().Path() == "runtime" && obj.Name() == "SetBlockProfileRate"
 }
 
 func isRuntimeSetMutexProfileFraction(pass *analysis.Pass, stmt ast.Stmt) bool {
 	_, obj := callWithFunObjFromStmt(pass, stmt)
+	if obj == nil {
+		return false
+	}
+
 	return obj.Pkg().Path() == "runtime" && obj.Name() == "SetMutexProfileFraction"
 }
 
@@ -161,6 +169,9 @@ func isProfileServedInGoStmt(pass *analysis.Pass, stmt ast.Stmt) bool {
 	}
 	for _, stmt := range fun.Body.List {
 		call, obj := callWithFunObjFromStmt(pass, stmt)
+		if call == nil || obj == nil {
+			continue
+		}
 		if isProfileServed(call, obj) {
 			return true
 		}
