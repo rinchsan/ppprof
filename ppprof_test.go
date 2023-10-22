@@ -16,4 +16,5 @@ func TestAnalyzer(t *testing.T) {
 	analysistest.Run(t, testdata, ppprof.Analyzer, "c")
 	analysistest.Run(t, testdata, ppprof.Analyzer, "d")
 	analysistest.Run(t, testdata, ppprof.Analyzer, "e")
+	analysistest.Run(t, testdata, ppprof.Analyzer, "main")
 }
