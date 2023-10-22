@@ -59,8 +59,8 @@ func run(pass *analysis.Pass) (any, error) {
 							Message: "set up pprof",
 							TextEdits: []analysis.TextEdit{
 								{
-									Pos: n.Body.Lbrace + 1,
-									End: n.Body.Lbrace + 1,
+									Pos: n.Body.Lbrace,
+									End: n.Body.Lbrace,
 									NewText: []byte(`
 	runtime.SetBlockProfileRate(1)
 	runtime.SetMutexProfileFraction(1)
@@ -95,8 +95,8 @@ func run(pass *analysis.Pass) (any, error) {
 					Message: "import net/http/pprof",
 					TextEdits: []analysis.TextEdit{
 						{
-							Pos:     pass.Files[0].Name.Pos() + 1,
-							End:     pass.Files[0].Name.Pos() + 1,
+							Pos:     pass.Files[0].Name.End(),
+							End:     pass.Files[0].Name.End(),
 							NewText: []byte("\n" + `import _ "net/http/pprof"`),
 						},
 					},
