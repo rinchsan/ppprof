@@ -14,10 +14,13 @@ go run github.com/rinchsan/gosimports/cmd/gosimports@latest -w main.go
 ```go
 package main
 
-import "fmt"
+import (
+    "log"
+    "net/http"
+)
 
 func main() {
-    fmt.Println("hello")
+    log.Fatal(http.ListenAndServe("localhost:8080", nil))
 }
 ```
 
@@ -27,7 +30,6 @@ func main() {
 package main
 
 import (
-    "fmt"
     "log"
     "net/http"
     _ "net/http/pprof"
@@ -41,6 +43,6 @@ func main() {
         log.Fatal(http.ListenAndServe("localhost:6060", nil))
     }()
 
-    fmt.Println("hello")
+    log.Fatal(http.ListenAndServe("localhost:8080", nil))
 }
 ```
