@@ -1,0 +1,19 @@
+package a
+
+import _ "net/http/pprof" // want "should import net/http/pprof"
+
+import "fmt"
+
+func main() {
+	runtime.SetBlockProfileRate(1)
+	runtime.SetMutexProfileFraction(1)
+	go func() {
+		log.Fatal(http.ListenAndServe("localhost:6060", nil))
+	}()
+
+	// want "should set up pprof at the beginning of main"
+	fmt.Println("ppprof")
+	fmt.Println("ppprof")
+	fmt.Println("ppprof")
+	fmt.Println("ppprof")
+}
