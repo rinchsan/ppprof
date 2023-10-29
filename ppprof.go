@@ -1,11 +1,11 @@
 package ppprof
 
 import (
-	"errors"
 	"go/ast"
 	"go/types"
 	"strconv"
 
+	"github.com/gostaticanalysis/analysisutil"
 	"golang.org/x/exp/slices"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -25,17 +25,13 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (any, error) {
-	if len(pass.Files) != 1 {
-		return nil, errors.New("cannot run with multiple files")
-	}
-
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 
 	nodeFilter := []ast.Node{
 		(*ast.FuncDecl)(nil),
 	}
 
-	var hasMain bool
+	var fileWithMain *ast.File
 
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch n := n.(type) {
@@ -48,19 +44,19 @@ func run(pass *analysis.Pass) (any, error) {
 				return
 			}
 
-			hasMain = true
+			fileWithMain = analysisutil.File(pass, n.Pos())
 
 			if !isPprofSetUp(pass, n.Body.List) {
 				pass.Report(analysis.Diagnostic{
-					Pos:     n.Pos(),
+					Pos:     n.Pos() + 1,
 					Message: "should set up pprof at the beginning of main",
 					SuggestedFixes: []analysis.SuggestedFix{
 						{
 							Message: "set up pprof",
 							TextEdits: []analysis.TextEdit{
 								{
-									Pos: n.Body.Lbrace,
-									End: n.Body.Lbrace,
+									Pos: n.Body.Lbrace + 1,
+									End: n.Body.Lbrace + 1,
 									NewText: []byte(`
 	runtime.SetBlockProfileRate(1)
 	runtime.SetMutexProfileFraction(1)
@@ -79,24 +75,28 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 	})
 
-	if !hasMain {
+	if fileWithMain == nil {
 		return nil, nil
 	}
 
-	isPprofImported := slices.ContainsFunc(pass.Pkg.Imports(), func(pkg *types.Package) bool {
-		return pkg.Path() == "net/http/pprof"
+	isPprofImported := slices.ContainsFunc(fileWithMain.Imports, func(imp *ast.ImportSpec) bool {
+		v, err := strconv.Unquote(imp.Path.Value)
+		if err != nil {
+			return false
+		}
+		return v == "net/http/pprof"
 	})
 	if !isPprofImported {
 		pass.Report(analysis.Diagnostic{
-			Pos:     pass.Files[0].Package,
+			Pos:     fileWithMain.Package,
 			Message: "should import net/http/pprof",
 			SuggestedFixes: []analysis.SuggestedFix{
 				{
 					Message: "import net/http/pprof",
 					TextEdits: []analysis.TextEdit{
 						{
-							Pos:     pass.Files[0].Name.End(),
-							End:     pass.Files[0].Name.End(),
+							Pos:     fileWithMain.Name.End(),
+							End:     fileWithMain.Name.End(),
 							NewText: []byte("\n" + `import _ "net/http/pprof"`),
 						},
 					},
