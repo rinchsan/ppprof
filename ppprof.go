@@ -36,11 +36,7 @@ func run(pass *analysis.Pass) (any, error) {
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch n := n.(type) {
 		case *ast.FuncDecl:
-			if n.Name.Name != "main" ||
-				n.Recv != nil ||
-				len(n.Type.Params.List) != 0 ||
-				n.Type.Results != nil {
-
+			if !isMainFunc(n) {
 				return
 			}
 
@@ -106,6 +102,13 @@ func run(pass *analysis.Pass) (any, error) {
 	}
 
 	return nil, nil
+}
+
+func isMainFunc(decl *ast.FuncDecl) bool {
+	return decl.Name.Name == "main" &&
+		decl.Recv == nil &&
+		len(decl.Type.Params.List) == 0 &&
+		decl.Type.Results == nil
 }
 
 func callWithFunObjFromStmt(pass *analysis.Pass, stmt ast.Stmt) (*ast.CallExpr, types.Object) {
